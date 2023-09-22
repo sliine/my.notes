@@ -21,15 +21,16 @@ const config = {
   organizationName: 'facebook', // Usually your GitHub org/user name.
   projectName: 'docusaurus', // Usually your repo name.
 
-  onBrokenLinks: 'throw',
+  
+  onBrokenLinks: 'ignore',
   onBrokenMarkdownLinks: 'warn',
 
   // Even if you don't use internalization, you can use this field to set useful
   // metadata like html lang. For example, if your site is Chinese, you may want
   // to replace "en" with "zh-Hans".
   i18n: {
-    defaultLocale: 'ru',
-    locales: ['ru'],
+    defaultLocale: 'en',
+    locales: ['en'],
   },
 
 	presets: [
@@ -54,11 +55,6 @@ const config = {
 				theme: {
 					customCss: require.resolve('./src/css/custom.css'),
 				},
-
-				gtag: {
-					trackingID: 'G-SXVYQX65GD',
-					anonymizeIP: true,
-				},
 			}),
 		],
 	],
@@ -77,10 +73,6 @@ const config = {
             {
             label: 'Главная',
             to: '/',
-            },
-            {
-            label: 'Мои проекты',
-            to: '/docs/projects/my',
             },
             {
             label: 'Все по годам',
