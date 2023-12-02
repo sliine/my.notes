@@ -1,9 +1,9 @@
 ---
-slug: first-see-docusaurus
-title: Первый взгляд на Docusaurus
+slug: install-windows
+title: Установка Winows на дедик
 tags:
-  - hello
-  - docusaurus
+  - windows
+  - hetzner
 ---
 Первый мой взгляд на **Docusaurus**, стал таким - интерес, сложность. непонятность. 
 
