@@ -1,133 +1,155 @@
-# Файловая система Linux
+# Установка Windows на Hetzner Dedicated Server
 
-Чаще всего использую **Debian 11**
+Введение
+В этой инструкции расскажу как установить операционную систему **Windows** на выделенное оборудование без использования **KVM-консоли**.
 
-## ⌨️ Format file system
+Необходимые условия
 
-### Форматирование файловых систем:
+- Выделенный сервер, работающий в системе **Rescue System**
+- Более [**8 ГБ**](https://my.karasiq.space/) оперативной памяти на сервере
+
+## Шаг 1 - Подготовка сервера
+
+Когда сервер находится в режиме **Rescue System (Linux x64)**, необходимо сделать следующее
 
 ```bash
-mke2fs /dev/hda1 — создать файловую систему ext2 на разделе hda1
-mke2fs -j /dev/hda1 — создать журналирующую файловую систему ext3 на разделе hda1
-mkfs -t vfat 32 -F /dev/hda1 — создать файловую систему FAT32 на разделе hda1
-fdformat -n /dev/fd0 — форматирование флоппи-диска без проверки
-mkswap /dev/hda3 — создание swap-пространства на разделе hda3
+apt update  — Обновить все пакеты
+apt install qemu-kvm — Установить сервис виртуальной машины
+
+apt update && apt install qemu-kvm - Для тех кому лень писать лве команды)
 ```
 
-###  Swap storage
 
-**swap**-пространство:
+###  Загрузка образа
 
-```bash
-swapon /dev/hda3 — активировать swap-пространство, расположенное на разделе hda3 
-swapon /dev/hda2 /dev/hdb3 — активировать swap-пространства, расположенные на разделах hda2 и hdb3
-```
-###  Clear files, systems, temp
+Затем необходимо загрузить обрах на сервер, в виде **ISO-файл Windows**. Возможны следующие варианты:
 
-Очистка системы \ временные файлы \ кеш обновлений \
+- Загрузить чере **SFTP**
+- Загрузить **ISO-образ** с **Microsoft / Hetzner** и другие через **wget**
 
-!!! Будь осторожен можно сломать дистрибутив
+:::tip
+[**Windows Server 2022 (ENG)**:](https://mirror.hetzner.de/bootimages/windows/SW_DVD9_Win_Server_STD_CORE_2022_2108.15_64Bit_English_DC_STD_MLF_X23-31801.ISO) - Нажми для скачивания
 
-```bash
-sudo apt-get autoclean -y - удалить скачанные файлы архивов 
-sudo apt-get clean -y - удалить старые скачанные файлы архивов 
-sudo apt-get install -f -y - решение проблем с установкой по
-```
+[**Windows Server 2022 (RU)**:](https://cdn.karasiq.space/iso/ru-ru_windows_server_2022_updated_oct_2023_x64_dvd_63dab61a.iso) - Нажми для скачивания
 
-## Raid cheat sheet
+[**Windows Server 2019 (ENG)**:](https://mirror.hetzner.de/bootimages/windows/SW_DVD9_Win_Server_STD_CORE_2019_1809.11_64Bit_English_DC_STD_MLF_X22-51041.ISO) - Нажми для скачивания
 
-### Шпаргалка по **RAID**
+[**Windows Server 2016 (ENG)**:](https://mirror.hetzner.de/bootimages/windows/SW_DVD9_Win_Server_STD_CORE_2016_64Bit_English_-4_DC_STD_MLF_X21-70526.ISO) - Нажми для скачивания
+:::
 
-`mdadm` — утилита для работы с программными **RAID-массивами** различных уровней. В данной инструкции рассмотрим примеры ее использования.
-
-### Информация о **RAID**
-```bash
-cat /proc/mdstat - состояние всех RAID 
-mdadm -D /dev/md0 - подробная инфа о конкретном RAID 
-lsblk - список дисков с разделами, местом, типом 
-df -hT - свободное место, тип файловой системы, точки монтирования
-```
-### Сборка **RAID**
+Загрузить образ можно, например, с помощью **wget** или **curl**:
 
 ```bash
-- mdadm —zero-superblock —force /dev/sd{b,c} - обнуление суперблоков на дисках sdb sdc
-(для удаления инфы о других RAID) при получении ответа
-
-- mdadm: Unrecognised md component device - /dev/sdb значит, что диск не использовался для RAID, 
- 
-продолжаем
-
-mdadm —create —verbose /dev/md0 -l 1 -n 2 /dev/sd{b,c}
-
-- где /dev/md0 — устройство RAID, которое появится после сборки; 
-- -l 1 — уровень RAID; 
-- -n 2 — количество дисков, из которых собирается массив; 
-- /dev/sd{b,c} — сборка выполняется из дисков sdb и sdc.
+wget <image> — Пример использования команды
 ```
 
-### Создание файловой системы и монтирование массива
-
+**Windows Server 2022 (ENG)**
 ```bash
-- mkfs.ext4 /dev/md0 - создание файловой системы ext4 на md0
-- mount /dev/md0 /mnt - разово примонтировать md0 к /mnt
-- nano /etc/fstab, прописать /dev/md0 /mnt ext4 defaults 1 2 
-постоянное монтирование, работает после перезагрузки
+wget https://mirror.hetzner.de/bootimages/windows/SW_DVD9_Win_Server_STD_CORE_2022_2108.15_64Bit_English_DC_STD_MLF_X23-31801.ISO
 ```
 
-### Восстановление **RAID**
-
-Замена жесткого диска. При выходе из строя, команда `mdadm -D /dev/md0` выдаст: **State : clean, degraded**
-
+**Windows Server 2022 (RU)**
 ```bash
-- mdadm /dev/md0 —remove /dev/sdc - удалить сбойный диск
-- mdadm /dev/md0 —add /dev/sde - добавить новый диск в массив
+wget https://cdn.karasiq.space/iso/ru-ru_windows_server_2022_updated_oct_2023_x64_dvd_63dab61a.iso 
 ```
 
-Статус должен стать **Rebuild Status : 40% complete** и так до полного восстановления
-
-Пересборка массива. Если нам нужно вернуть ранее разобранный или развалившийся массив из дисков, которые уже входили в состав **RAID**, вводим:
-
+**Windows Server 2019 (ENG)**
 ```bash
-mdadm —assemble —scan - команда сама найдет необходимую конфигурацию и восстановит RAID.
-mdadm —assemble /dev/md0 /dev/sdb /dev/sdc - с указанием из каких дисков пересобрать
+wget https://mirror.hetzner.de/bootimages/windows/SW_DVD9_Win_Server_STD_CORE_2019_1809.11_64Bit_English_DC_STD_MLF_X22-51041.ISO
 ```
 
-#### Запасной диск **(Hot Spare)**
-
-Если в массиве будет запасной диск для горячей замены, при выходе из строя одного из основных дисков, его место займет запасной.
-
+**Windows Server 2016 (ENG)**
 ```bash
-- mdadm /dev/md0 —add /dev/sdd - Диском Hot Spare станет тот, который просто будет добавлен к массиву
+wget https://mirror.hetzner.de/bootimages/windows/SW_DVD9_Win_Server_STD_CORE_2016_64Bit_English_-4_DC_STD_MLF_X21-70526.ISO 
 ```
-Добавить диск к массиву, расширить массив
+### Подготовка диска
 
-Добавление активного диска к **RAID**, который будет использоваться для работы, а не в качестве запасного.
+После подключения **ISO-образа**, нужно подготовить диск для установки системы. Для этого нужно создать таблицу разделов
 
-```bash
--mdadm /dev/md0 —add /dev/sde    
--mdadm -G /dev/md0 —raid-devices=3 - расширяем RAID
-```    
-в данном примере подразумевается, что у нас **RAID 1** и мы добавили к нему **3-й** диск.
+:::tip
+**Внимание Все данные на диске (дисках) будут удалены во время следующих шагов:**
+:::
 
-## Установка mdadm
-
-Если каким-то образом в дистрибутиве нет этого пакета `apt-get install mdadm`
-
-Удаление массива
-
-Если нам нужно полностью разобрать **RAID**, сначала размонтируем и остановим его: 
-
+Запускаем разметку на нужном диске `parted`:
 
 ```bash
-- umount /mnt - Остановка RAID
-- где /mnt — каталог монтирования нашего RAID.
-- mdadm -S /dev/md0
+parted /dev/nvme0n1
 ```
 
-Затем очищаем суперблоки на всех дисках, из которых он был собран:
+Создание таблицы разделов для дисков размером менее **2 ТБ**:
+```bash
+mklabel msdos
+```
+
+Создание таблицы разделов для дисков объемом более **2 ТБ**:
+```bash
+mklabel gpt
+```
+Все это должно выглядеть примерно так:
 
 ```bash
-- mdadm —zero-superblock /dev/sdb
-- mdadm —zero-superblock /dev/sdc
-- mdadm —zero-superblock /dev/sdd
+root@rescue ~ # parted /dev/nvme0n1
+GNU Parted 3.2
+Using /dev/nvme0n1
+Welcome to GNU Parted! Type 'help' to view a list of commands.
+(parted) [mklabel msdos]
+Warning: The existing disk label on /dev/nvme0n1 will be destroyed and all data on this disk will be
+lost. Do you want to continue?
+Yes/No? [yes]
+(parted) [quit]
+Information: You may need to update /etc/fstab.
 ```
+
+## Шаг 2 - Подключение к SSH
+
+Для последующей установки через VNC необходим SSH-коннект. В противном случае доступ к установке можно получить через Интернет.
+
+В **Linux** и **Windows** с установленным **OpenSSH** просто выполните следующую команду локально и войдите на сервер:
+
+```bash
+ssh root@your_host -p 22
+```
+
+### Шаг 3 - Запуск установки Windows
+
+Теперь можно приступить собственно к установке **Windows**. Для этого на сервере нужно выполненить следующую команду (измененная соответствующим образом).
+
+**Windows Server 2022 (ENG)**
+```bash
+qemu-system-x86_64 -enable-kvm -smp 4 -m 4096 -boot d -cdrom SW_DVD9_Win_Server_STD_CORE_2022_2108.15_64Bit_English_DC_STD_MLF_X23-31801.ISO -drive file=/dev/nvme0n1,format=raw,media=disk -vnc :1
+```
+
+**Windows Server 2022 (RU)**
+```bash
+qemu-system-x86_64 -enable-kvm -smp 4 -m 4096 -boot d -cdrom ru-ru_windows_server_2022_updated_oct_2023_x64_dvd_63dab61a.iso -drive file=/dev/nvme0n1,format=raw,media=disk -vnc :1
+```
+
+**Windows Server 2019 (ENG)**
+```bash
+qemu-system-x86_64 -enable-kvm -smp 4 -m 4096 -boot d -cdrom SW_DVD9_Win_Server_STD_CORE_2019_1809.11_64Bit_English_DC_STD_MLF_X22-51041.ISO -drive file=/dev/nvme0n1,format=raw,media=disk -vnc :1
+```
+
+**Windows Server 2016 (ENG)**
+```bash
+qemu-system-x86_64 -enable-kvm -smp 4 -m 4096 -boot d -cdrom SW_DVD9_Win_Server_STD_CORE_2022_2108.15_64Bit_English_DC_STD_MLF_X23-31801.ISO -drive file=/dev/nvme0n1,format=raw,media=disk -vnc :1
+```
+
+Далее установку можно продолжить через **VNC**. Можно подключиться из выбранной тобой программы просмотра **VNC** по следующему адресу: `айпи_сервера:1`
+
+### Шаг 5 - Включение RDP и отключение брандмауэра
+
+Для последующего подключения к серверу по RDP необходимо активировать эту функцию:
+
+![rdp](./img/RDP.png)
+
+Чтобы минимизировать дальнейшие источники ошибок, имеет смысл отключить **брандмауэр Windows** перед перезагрузкой (но это необязательно).
+
+Теперь можно завершить работу **Windows** и перезапустить сервер. Через несколько минут должно появиться подключение к серверу по **RDP**.
+
+После завершения работы **Windows**, возвращаемся в консоль и пишем эту команду
+
+```bash
+root@rescue ~ # reboot - Перезапускаем сервер
+```
+
+Далее ждём минут 5-10 и подключаемся через **RDP**.
